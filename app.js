@@ -17,7 +17,7 @@ function showGateError(message) {
 }
 
 async function startDuke() {
-  history.replaceState({}, '', `${location.pathname}${location.hash || ''}`);
+  const entryHash = location.hash;
   document.getElementById('copyPrivateLinkButton')?.classList.add('hidden');
   try {
     const [
@@ -50,6 +50,15 @@ async function startDuke() {
     initRelationshipPlus();
     initPartnerNotes();
     initActivitiesPlus();
+
+    if (entryHash === '#duke-notes') {
+      setTimeout(() => {
+        document.getElementById('dukeNotesSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState({}, '', location.pathname);
+      }, 650);
+    } else if (location.hash && !location.hash.startsWith('#duke-call=')) {
+      history.replaceState({}, '', location.pathname);
+    }
   } catch (error) {
     console.error('Duke init error:', error);
     gateScreen?.classList.remove('hidden');
@@ -113,7 +122,6 @@ function renderCodeGate() {
 }
 
 async function boot() {
-  history.replaceState({}, '', `${location.pathname}${location.hash || ''}`);
   try {
     const response = await fetch('/api/duke?action=gate', {
       credentials: 'same-origin',
