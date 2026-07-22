@@ -1,4 +1,4 @@
-const CACHE = 'duke-neon-v9';
+const CACHE = 'duke-neon-v10';
 const STATIC = [
   '/',
   '/index.html',
@@ -11,6 +11,9 @@ const STATIC = [
   '/src/more-games.js',
   '/src/draw-game.js',
   '/src/ui-enhancements.js',
+  '/src/relationship-plus.js',
+  '/src/notes.js',
+  '/src/activities-plus.js',
   '/manifest.webmanifest',
   '/assets/duke-icon.svg'
 ];
@@ -46,13 +49,31 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+async function findDukeClient() {
+  const openClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  return openClients.find((client) => new URL(client.url).origin === self.location.origin) || null;
+}
+
 self.addEventListener('notificationclick', (event) => {
-  const callId = event.notification?.data?.callId;
-  const action = event.action || 'answer';
+  const data = event.notification?.data || {};
+  const action = event.action || '';
   event.notification.close();
-  if (!callId) return;
 
   event.waitUntil((async () => {
+    if (data.type === 'partner_note') {
+      const existing = await findDukeClient();
+      if (existing) {
+        existing.postMessage({ type: 'DUKE_OPEN_NOTES', noteId: data.noteId });
+        await existing.focus();
+        return;
+      }
+      await self.clients.openWindow('/#duke-notes');
+      return;
+    }
+
+    const callId = data.callId;
+    if (!callId) return;
+
     if (action === 'reject') {
       await fetch('/api/calls?action=decline', {
         method: 'POST',
@@ -63,8 +84,7 @@ self.addEventListener('notificationclick', (event) => {
       return;
     }
 
-    const openClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    const existing = openClients.find((client) => new URL(client.url).origin === self.location.origin);
+    const existing = await findDukeClient();
     if (existing) {
       existing.postMessage({ type: 'DUKE_ANSWER_CALL', callId });
       await existing.focus();
