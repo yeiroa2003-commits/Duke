@@ -1,4 +1,4 @@
-const CACHE = 'duke-neon-v4';
+const CACHE = 'duke-neon-v5';
 const STATIC = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const STATIC = [
   '/app.js',
   '/src/core.js',
   '/src/events.js',
+  '/src/space-fix.js',
   '/manifest.webmanifest',
   '/assets/duke-icon.svg'
 ];
