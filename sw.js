@@ -1,4 +1,4 @@
-const CACHE = 'duke-neon-v10';
+const CACHE = 'duke-neon-v11';
 const STATIC = [
   '/',
   '/index.html',
@@ -14,6 +14,7 @@ const STATIC = [
   '/src/relationship-plus.js',
   '/src/notes.js',
   '/src/activities-plus.js',
+  '/src/journey.js',
   '/manifest.webmanifest',
   '/assets/duke-icon.svg'
 ];
@@ -68,6 +69,17 @@ self.addEventListener('notificationclick', (event) => {
         return;
       }
       await self.clients.openWindow('/#duke-notes');
+      return;
+    }
+
+    if (data.type === 'journey_capsule') {
+      const existing = await findDukeClient();
+      if (existing) {
+        existing.postMessage({ type: 'DUKE_OPEN_JOURNEY', capsuleId: data.capsuleId });
+        await existing.focus();
+        return;
+      }
+      await self.clients.openWindow('/#duke-journey');
       return;
     }
 
