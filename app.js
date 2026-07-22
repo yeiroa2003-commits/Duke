@@ -20,8 +20,12 @@ async function startDuke() {
   history.replaceState({}, '', `${location.pathname}${location.hash || ''}`);
   document.getElementById('copyPrivateLinkButton')?.classList.add('hidden');
   try {
-    const { init } = await import('/src/events.js');
+    const [{ init }, { initSpaceFix }] = await Promise.all([
+      import('/src/events.js'),
+      import('/src/space-fix.js'),
+    ]);
     await init();
+    initSpaceFix();
   } catch (error) {
     console.error('Duke init error:', error);
     gateScreen?.classList.remove('hidden');
