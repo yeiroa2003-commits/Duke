@@ -29,11 +29,7 @@ function cookies(req) {
 
 function requestBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
-  try {
-    return JSON.parse(req.body || '{}');
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(req.body || '{}'); } catch { return {}; }
 }
 
 function clean(value, max = 100) {
@@ -47,12 +43,9 @@ function json(res, status, payload) {
 function errorCode(error) {
   const message = String(error?.message || error || '');
   const known = [
-    'DATABASE_URL_MISSING',
-    'UNAUTHORIZED',
-    'ACCESS_CODE_REQUIRED',
-    'NO_DUKE_SPACE',
-    'PARTNER_NOT_CONNECTED',
-    'CALL_NOT_FOUND',
+    'DATABASE_URL_MISSING', 'UNAUTHORIZED', 'ACCESS_CODE_REQUIRED',
+    'NO_DUKE_SPACE', 'PARTNER_NOT_CONNECTED', 'CALL_NOT_FOUND',
+    'INVALID_SIGNAL', 'INVALID_INPUT'
   ];
   return known.find((code) => message.includes(code)) || 'SERVER_ERROR';
 }
@@ -87,12 +80,58 @@ async function currentCouple(sql, userId) {
   return rows[0] || null;
 }
 
+async function ensureSignaling(sql) {
+  await sql`
+    create table if not exists public.call_signals (
+      id bigserial primary key,
+      call_id uuid not null references public.calls(id) on delete cascade,
+      sender_id uuid not null references public.users(id) on delete cascade,
+      signal_type varchar(20) not null check (signal_type in ('offer', 'answer', 'candidate')),
+      payload jsonb not null,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`
+    create index if not exists call_signals_call_id_idx
+      on public.call_signals (call_id, id)
+  `;
+  await sql`delete from public.call_signals where created_at < now() - interval '1 day'`;
+}
+
+function iceServers() {
+  const servers = [
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+    { urls: 'stun:stun.cloudflare.com:3478' },
+  ];
+
+  const turnUrl = clean(process.env.TURN_URL, 800);
+  const username = clean(process.env.TURN_USERNAME, 300);
+  const credential = clean(process.env.TURN_CREDENTIAL, 300);
+  if (turnUrl && username && credential) {
+    servers.push({
+      urls: turnUrl.split(',').map((item) => item.trim()).filter(Boolean),
+      username,
+      credential,
+    });
+  }
+  return servers;
+}
+
 async function activeCall(sql, coupleId) {
+  await sql`
+    update public.calls
+    set status = 'missed', ended_at = now()
+    where couple_id = ${coupleId}::uuid
+      and status = 'ringing'
+      and started_at < now() - interval '3 minutes'
+  `;
+
   const rows = await sql`
     select c.id,
            c.couple_id,
            c.started_by,
            c.call_type,
+           c.provider,
            c.room_name,
            c.status,
            c.started_at,
@@ -105,6 +144,19 @@ async function activeCall(sql, coupleId) {
       and c.status in ('ringing', 'active')
       and c.started_at > now() - interval '4 hours'
     order by c.started_at desc
+    limit 1
+  `;
+  return rows[0] || null;
+}
+
+async function assertCall(sql, callId, coupleId) {
+  const rows = await sql`
+    select id, couple_id, started_by, call_type, provider, room_name,
+           status, started_at, answered_at
+    from public.calls
+    where id = ${callId}::uuid
+      and couple_id = ${coupleId}::uuid
+      and status in ('ringing', 'active')
     limit 1
   `;
   return rows[0] || null;
@@ -130,6 +182,7 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   try {
+    await ensureSignaling(sql);
     const user = await currentUser(req, sql);
     if (!user) return json(res, 401, { ok: false, error: 'UNAUTHORIZED' });
 
@@ -140,7 +193,11 @@ export default async function handler(req, res) {
     const action = clean(req.query?.action || input.action, 30);
 
     if (action === 'status') {
-      return json(res, 200, { ok: true, call: await activeCall(sql, couple.id) });
+      return json(res, 200, {
+        ok: true,
+        call: await activeCall(sql, couple.id),
+        iceServers: iceServers(),
+      });
     }
 
     if (action === 'start') {
@@ -149,7 +206,7 @@ export default async function handler(req, res) {
       }
 
       const type = input.type === 'audio' ? 'audio' : 'video';
-      const roomName = `Duke-${String(couple.id).replaceAll('-', '')}-${crypto.randomBytes(8).toString('hex')}`;
+      const roomName = `Duke-${String(couple.id).replaceAll('-', '')}-${crypto.randomBytes(5).toString('hex')}`;
 
       await sql`
         update public.calls
@@ -162,42 +219,24 @@ export default async function handler(req, res) {
         insert into public.calls
           (couple_id, started_by, call_type, provider, room_name, status)
         values
-          (${couple.id}::uuid, ${user.id}::uuid, ${type}, 'jitsi', ${roomName}, 'ringing')
-        returning id, couple_id, started_by, call_type, room_name, status, started_at, answered_at
+          (${couple.id}::uuid, ${user.id}::uuid, ${type}, 'webrtc', ${roomName}, 'ringing')
+        returning id, couple_id, started_by, call_type, provider, room_name,
+                  status, started_at, answered_at
       `;
 
       const call = { ...rows[0], starter_name: user.display_name, starter_avatar: user.avatar };
-
-      const partner = await sql`
-        select user_id
-        from public.couple_members
-        where couple_id = ${couple.id}::uuid
-          and user_id <> ${user.id}::uuid
-        limit 1
-      `;
-
-      if (partner[0]) {
-        await sql`
-          insert into public.notifications
-            (couple_id, sender_id, recipient_id, notification_type, title, body, data)
-          values
-            (
-              ${couple.id}::uuid,
-              ${user.id}::uuid,
-              ${partner[0].user_id}::uuid,
-              'incoming_call',
-              ${`${user.display_name} inició una videollamada`},
-              ${type === 'video' ? 'Toca para unirte con cámara y micrófono.' : 'Toca para unirte a la llamada de voz.'},
-              ${JSON.stringify({ callId: call.id, roomName, type })}::jsonb
-            )
-        `;
-      }
-
-      return json(res, 201, { ok: true, call });
+      return json(res, 201, { ok: true, call, iceServers: iceServers() });
     }
 
     const callId = clean(input.callId, 36);
-    if (!callId) return json(res, 400, { ok: false, error: 'CALL_NOT_FOUND' });
+    if (!callId || !/^[0-9a-f-]{36}$/i.test(callId)) {
+      return json(res, 400, { ok: false, error: 'CALL_NOT_FOUND' });
+    }
+
+    const call = await assertCall(sql, callId, couple.id);
+    if (!call && !['end', 'decline'].includes(action)) {
+      return json(res, 404, { ok: false, error: 'CALL_NOT_FOUND' });
+    }
 
     if (action === 'answer') {
       const rows = await sql`
@@ -206,10 +245,39 @@ export default async function handler(req, res) {
         where id = ${callId}::uuid
           and couple_id = ${couple.id}::uuid
           and status in ('ringing', 'active')
-        returning id, couple_id, started_by, call_type, room_name, status, started_at, answered_at
+        returning id, couple_id, started_by, call_type, provider, room_name,
+                  status, started_at, answered_at
       `;
       if (!rows[0]) return json(res, 404, { ok: false, error: 'CALL_NOT_FOUND' });
-      return json(res, 200, { ok: true, call: rows[0] });
+      return json(res, 200, { ok: true, call: rows[0], iceServers: iceServers() });
+    }
+
+    if (action === 'signal') {
+      const signalType = clean(input.signalType, 20);
+      if (!['offer', 'answer', 'candidate'].includes(signalType) || !input.payload || typeof input.payload !== 'object') {
+        return json(res, 400, { ok: false, error: 'INVALID_SIGNAL' });
+      }
+
+      const rows = await sql`
+        insert into public.call_signals (call_id, sender_id, signal_type, payload)
+        values (${callId}::uuid, ${user.id}::uuid, ${signalType}, ${JSON.stringify(input.payload)}::jsonb)
+        returning id
+      `;
+      return json(res, 201, { ok: true, signalId: rows[0].id });
+    }
+
+    if (action === 'signals') {
+      const afterId = Math.max(0, Number.parseInt(String(input.afterId || '0'), 10) || 0);
+      const rows = await sql`
+        select id, signal_type, payload, sender_id, created_at
+        from public.call_signals
+        where call_id = ${callId}::uuid
+          and id > ${afterId}
+          and sender_id <> ${user.id}::uuid
+        order by id asc
+        limit 200
+      `;
+      return json(res, 200, { ok: true, signals: rows });
     }
 
     if (action === 'decline') {
