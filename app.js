@@ -26,18 +26,21 @@ async function startDuke() {
       { initWebRTCCalls },
       { initMoreGames },
       { initDrawGame },
+      { initUiEnhancements },
     ] = await Promise.all([
       import('/src/events.js'),
       import('/src/space-fix.js'),
       import('/src/video-calls.js'),
       import('/src/more-games.js'),
       import('/src/draw-game.js'),
+      import('/src/ui-enhancements.js'),
     ]);
     await init();
     initSpaceFix();
     initWebRTCCalls();
     initMoreGames();
     initDrawGame();
+    initUiEnhancements();
   } catch (error) {
     console.error('Duke init error:', error);
     gateScreen?.classList.remove('hidden');
