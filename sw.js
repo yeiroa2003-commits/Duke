@@ -1,4 +1,4 @@
-const CACHE = 'duke-neon-v7';
+const CACHE = 'duke-neon-v8';
 const STATIC = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const STATIC = [
   '/src/space-fix.js',
   '/src/video-calls.js',
   '/src/more-games.js',
+  '/src/draw-game.js',
   '/manifest.webmanifest',
   '/assets/duke-icon.svg'
 ];
@@ -42,4 +43,32 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
   );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  const callId = event.notification?.data?.callId;
+  const action = event.action || 'answer';
+  event.notification.close();
+  if (!callId) return;
+
+  event.waitUntil((async () => {
+    if (action === 'reject') {
+      await fetch('/api/calls?action=decline', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callId }),
+      }).catch(() => {});
+      return;
+    }
+
+    const openClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const existing = openClients.find((client) => new URL(client.url).origin === self.location.origin);
+    if (existing) {
+      existing.postMessage({ type: 'DUKE_ANSWER_CALL', callId });
+      await existing.focus();
+      return;
+    }
+    await self.clients.openWindow(`/#duke-call=${callId}`);
+  })());
 });
