@@ -16,6 +16,13 @@ function showGateError(message) {
   error.textContent = message;
 }
 
+function openJourneySection() {
+  setTimeout(() => {
+    document.getElementById('dukeJourneySection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    history.replaceState({}, '', location.pathname);
+  }, 350);
+}
+
 async function startDuke() {
   const entryHash = location.hash;
   document.getElementById('copyPrivateLinkButton')?.classList.add('hidden');
@@ -54,16 +61,17 @@ async function startDuke() {
     initActivitiesPlus();
     initJourney();
 
+    navigator.serviceWorker?.addEventListener('message', (event) => {
+      if (event.data?.type === 'DUKE_OPEN_JOURNEY') openJourneySection();
+    });
+
     if (entryHash === '#duke-notes') {
       setTimeout(() => {
         document.getElementById('dukeNotesSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         history.replaceState({}, '', location.pathname);
       }, 650);
     } else if (entryHash === '#duke-journey') {
-      setTimeout(() => {
-        document.getElementById('dukeJourneySection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        history.replaceState({}, '', location.pathname);
-      }, 750);
+      setTimeout(openJourneySection, 400);
     } else if (location.hash && !location.hash.startsWith('#duke-call=')) {
       history.replaceState({}, '', location.pathname);
     }
