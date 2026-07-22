@@ -18,6 +18,7 @@ function showGateError(message) {
 
 async function startDuke() {
   history.replaceState({}, '', `${location.pathname}${location.hash || ''}`);
+  document.getElementById('copyPrivateLinkButton')?.classList.add('hidden');
   try {
     const { init } = await import('/src/events.js');
     await init();
