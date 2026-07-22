@@ -11,6 +11,7 @@ const ALLOWED_GAMES = new Set([
   'memory_match',
   'compatibility',
   'couple_bingo',
+  'draw_guess',
 ]);
 
 function sha256(value) {
@@ -129,7 +130,7 @@ export default async function handler(req, res) {
         return response(res, 400, { ok: false, error: 'INVALID_GAME_STATE' });
       }
       const serialized = JSON.stringify(input.state);
-      if (serialized.length > 100000) return response(res, 413, { ok: false, error: 'GAME_STATE_TOO_LARGE' });
+      if (serialized.length > 120000) return response(res, 413, { ok: false, error: 'GAME_STATE_TOO_LARGE' });
 
       const rows = await sql`
         insert into public.extra_game_states (couple_id, game_type, state, updated_by)
