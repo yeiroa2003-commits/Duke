@@ -27,6 +27,9 @@ async function startDuke() {
       { initMoreGames },
       { initDrawGame },
       { initUiEnhancements },
+      { initRelationshipPlus },
+      { initPartnerNotes },
+      { initActivitiesPlus },
     ] = await Promise.all([
       import('/src/events.js'),
       import('/src/space-fix.js'),
@@ -34,6 +37,9 @@ async function startDuke() {
       import('/src/more-games.js'),
       import('/src/draw-game.js'),
       import('/src/ui-enhancements.js'),
+      import('/src/relationship-plus.js'),
+      import('/src/notes.js'),
+      import('/src/activities-plus.js'),
     ]);
     await init();
     initSpaceFix();
@@ -41,6 +47,9 @@ async function startDuke() {
     initMoreGames();
     initDrawGame();
     initUiEnhancements();
+    initRelationshipPlus();
+    initPartnerNotes();
+    initActivitiesPlus();
   } catch (error) {
     console.error('Duke init error:', error);
     gateScreen?.classList.remove('hidden');
