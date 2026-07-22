@@ -20,14 +20,21 @@ async function startDuke() {
   history.replaceState({}, '', `${location.pathname}${location.hash || ''}`);
   document.getElementById('copyPrivateLinkButton')?.classList.add('hidden');
   try {
-    const [{ init }, { initSpaceFix }, { initVideoCalls }] = await Promise.all([
+    const [
+      { init },
+      { initSpaceFix },
+      { initWebRTCCalls },
+      { initMoreGames },
+    ] = await Promise.all([
       import('/src/events.js'),
       import('/src/space-fix.js'),
       import('/src/video-calls.js'),
+      import('/src/more-games.js'),
     ]);
     await init();
     initSpaceFix();
-    initVideoCalls();
+    initWebRTCCalls();
+    initMoreGames();
   } catch (error) {
     console.error('Duke init error:', error);
     gateScreen?.classList.remove('hidden');
