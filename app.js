@@ -30,6 +30,7 @@ async function startDuke() {
       { initRelationshipPlus },
       { initPartnerNotes },
       { initActivitiesPlus },
+      { initJourney },
     ] = await Promise.all([
       import('/src/events.js'),
       import('/src/space-fix.js'),
@@ -40,6 +41,7 @@ async function startDuke() {
       import('/src/relationship-plus.js'),
       import('/src/notes.js'),
       import('/src/activities-plus.js'),
+      import('/src/journey.js'),
     ]);
     await init();
     initSpaceFix();
@@ -50,12 +52,18 @@ async function startDuke() {
     initRelationshipPlus();
     initPartnerNotes();
     initActivitiesPlus();
+    initJourney();
 
     if (entryHash === '#duke-notes') {
       setTimeout(() => {
         document.getElementById('dukeNotesSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         history.replaceState({}, '', location.pathname);
       }, 650);
+    } else if (entryHash === '#duke-journey') {
+      setTimeout(() => {
+        document.getElementById('dukeJourneySection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState({}, '', location.pathname);
+      }, 750);
     } else if (location.hash && !location.hash.startsWith('#duke-call=')) {
       history.replaceState({}, '', location.pathname);
     }
