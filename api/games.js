@@ -12,6 +12,11 @@ const ALLOWED_GAMES = new Set([
   'compatibility',
   'couple_bingo',
   'draw_guess',
+  'emoji_guess',
+  'bucket_list',
+  'love_coupons',
+  'weekly_challenge',
+  'date_planner',
 ]);
 
 function sha256(value) {
