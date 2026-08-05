@@ -39,6 +39,7 @@ async function startDuke() {
       { initActivitiesPlus },
       { initJourney },
       { initGiftStory },
+      { initDukeBeagle },
     ] = await Promise.all([
       import('/src/events.js'),
       import('/src/space-fix.js'),
@@ -51,6 +52,7 @@ async function startDuke() {
       import('/src/activities-plus.js'),
       import('/src/journey.js'),
       import('/src/gift-story.js'),
+      import('/src/duke-beagle.js'),
     ]);
     await init();
     initSpaceFix();
@@ -63,6 +65,7 @@ async function startDuke() {
     initActivitiesPlus();
     initJourney();
     initGiftStory();
+    initDukeBeagle();
 
     navigator.serviceWorker?.addEventListener('message', (event) => {
       if (event.data?.type === 'DUKE_OPEN_JOURNEY') openJourneySection();
