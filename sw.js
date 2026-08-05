@@ -1,4 +1,4 @@
-const CACHE = 'duke-neon-v12';
+const CACHE = 'duke-neon-v13';
 const STATIC = [
   '/',
   '/index.html',
@@ -17,6 +17,7 @@ const STATIC = [
   '/src/journey.js',
   '/src/gift-story.js',
   '/src/gift-story.css',
+  '/src/duke-beagle.js',
   '/manifest.webmanifest',
   '/assets/duke-icon.svg'
 ];
