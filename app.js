@@ -23,52 +23,61 @@ function openJourneySection() {
   }, 350);
 }
 
+async function loadOptionalFeature(path, exportName) {
+  try {
+    const module = await import(path);
+    const initializer = module?.[exportName];
+    if (typeof initializer === 'function') {
+      await initializer();
+    } else {
+      console.warn(`Duke optional feature missing initializer: ${exportName}`);
+    }
+    return true;
+  } catch (error) {
+    console.error(`Duke optional feature failed: ${path}`, error);
+    return false;
+  }
+}
+
+async function startOptionalFeatures() {
+  const features = [
+    ['/src/space-fix.js', 'initSpaceFix'],
+    ['/src/video-calls.js', 'initWebRTCCalls'],
+    ['/src/more-games.js', 'initMoreGames'],
+    ['/src/draw-game.js', 'initDrawGame'],
+    ['/src/ui-enhancements.js', 'initUiEnhancements'],
+    ['/src/relationship-plus.js', 'initRelationshipPlus'],
+    ['/src/notes.js', 'initPartnerNotes'],
+    ['/src/activities-plus.js', 'initActivitiesPlus'],
+    ['/src/journey.js', 'initJourney'],
+    ['/src/gift-story.js', 'initGiftStory'],
+    ['/src/duke-beagle.js', 'initDukeBeagle'],
+  ];
+
+  for (const [path, exportName] of features) {
+    await loadOptionalFeature(path, exportName);
+  }
+
+  // Audio is intentionally loaded last and isolated because browser media APIs
+  // vary between iPhone, Android and desktop. It must never block Duke startup.
+  setTimeout(() => {
+    loadOptionalFeature('/src/gift-audio-natural.js', 'initGiftAudioNatural');
+  }, 700);
+}
+
 async function startDuke() {
   const entryHash = location.hash;
   document.getElementById('copyPrivateLinkButton')?.classList.add('hidden');
+
   try {
-    const [
-      { init },
-      { initSpaceFix },
-      { initWebRTCCalls },
-      { initMoreGames },
-      { initDrawGame },
-      { initUiEnhancements },
-      { initRelationshipPlus },
-      { initPartnerNotes },
-      { initActivitiesPlus },
-      { initJourney },
-      { initGiftStory },
-      { initDukeBeagle },
-      { initGiftAudioNatural },
-    ] = await Promise.all([
-      import('/src/events.js'),
-      import('/src/space-fix.js'),
-      import('/src/video-calls.js'),
-      import('/src/more-games.js'),
-      import('/src/draw-game.js'),
-      import('/src/ui-enhancements.js'),
-      import('/src/relationship-plus.js'),
-      import('/src/notes.js'),
-      import('/src/activities-plus.js'),
-      import('/src/journey.js'),
-      import('/src/gift-story.js'),
-      import('/src/duke-beagle.js'),
-      import('/src/gift-audio-natural.js'),
-    ]);
+    const { init } = await import('/src/events.js');
+    if (typeof init !== 'function') throw new Error('DUKE_CORE_INIT_MISSING');
+
     await init();
-    initSpaceFix();
-    initWebRTCCalls();
-    initMoreGames();
-    initDrawGame();
-    initUiEnhancements();
-    initRelationshipPlus();
-    initPartnerNotes();
-    initActivitiesPlus();
-    initJourney();
-    initGiftStory();
-    initDukeBeagle();
-    initGiftAudioNatural();
+
+    // Duke is already usable at this point. Extra features load separately so
+    // one broken module cannot leave the whole application blank.
+    startOptionalFeatures();
 
     navigator.serviceWorker?.addEventListener('message', (event) => {
       if (event.data?.type === 'DUKE_OPEN_JOURNEY') openJourneySection();
@@ -78,17 +87,17 @@ async function startDuke() {
       setTimeout(() => {
         document.getElementById('dukeNotesSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         history.replaceState({}, '', location.pathname);
-      }, 650);
+      }, 900);
     } else if (entryHash === '#duke-journey') {
-      setTimeout(openJourneySection, 400);
+      setTimeout(openJourneySection, 700);
     } else if (location.hash && !location.hash.startsWith('#duke-call=')) {
       history.replaceState({}, '', location.pathname);
     }
   } catch (error) {
-    console.error('Duke init error:', error);
+    console.error('Duke core init error:', error);
     gateScreen?.classList.remove('hidden');
     if (gateTitle) gateTitle.textContent = 'Duke no pudo iniciar';
-    if (gateText) gateText.textContent = 'Actualiza la página. Si el problema continúa, revisa la configuración de Vercel y Neon.';
+    if (gateText) gateText.textContent = 'Actualiza la página. Si el problema continúa, cierra Duke por completo y vuelve a abrirlo.';
     gateLoader?.classList.add('hidden');
   }
 }
@@ -158,7 +167,7 @@ async function boot() {
       return;
     }
   } catch {
-    // La pantalla del código también funciona cuando la comprobación inicial falla.
+    // The code screen remains available when the initial check fails.
   }
   renderCodeGate();
 }
