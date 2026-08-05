@@ -1,11 +1,16 @@
-const CACHE = 'duke-neon-v16';
-const STATIC = [
+const CACHE = 'duke-neon-v17';
+const CORE_ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
   '/app.js',
   '/src/core.js',
   '/src/events.js',
+  '/manifest.webmanifest',
+  '/assets/duke-icon.svg',
+];
+
+const OPTIONAL_ASSETS = [
   '/src/space-fix.js',
   '/src/video-calls.js',
   '/src/more-games.js',
@@ -18,17 +23,18 @@ const STATIC = [
   '/src/gift-story.js',
   '/src/gift-story.css',
   '/src/duke-beagle.js',
-  '/src/gift-audio-natural.js',
-  '/manifest.webmanifest',
-  '/assets/duke-icon.svg'
 ];
 
+async function cacheAssets() {
+  const cache = await caches.open(CACHE);
+  await Promise.allSettled([...CORE_ASSETS, ...OPTIONAL_ASSETS].map(async (url) => {
+    const response = await fetch(url, { cache: 'reload' });
+    if (response.ok) await cache.put(url, response);
+  }));
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    await Promise.allSettled(STATIC.map((url) => cache.add(url)));
-    await self.skipWaiting();
-  })());
+  event.waitUntil(cacheAssets().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -39,34 +45,50 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response.ok) {
+      const cache = await caches.open(CACHE);
+      await cache.put(request, response.clone()).catch(() => {});
+    }
+    return response;
+  } catch {
+    const exact = await caches.match(request);
+    if (exact) return exact;
+
+    const url = new URL(request.url);
+    const pathnameFallback = await caches.match(url.pathname);
+    if (pathnameFallback) return pathnameFallback;
+
+    return null;
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  if (event.request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
 
-  event.respondWith((async () => {
-    try {
-      const response = await fetch(event.request);
-      if (response?.ok) {
-        const copy = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(event.request, copy)).catch(() => {});
-      }
-      return response;
-    } catch {
-      const cached = await caches.match(event.request);
-      if (cached) return cached;
-
-      // Only navigation requests may fall back to index.html. Returning HTML
-      // for JavaScript or CSS causes module parse errors and a blank app.
-      if (event.request.mode === 'navigate') {
-        const shell = await caches.match('/index.html');
-        if (shell) return shell;
-      }
-
-      return new Response('Recurso no disponible', {
+  if (event.request.mode === 'navigate') {
+    event.respondWith((async () => {
+      const response = await networkFirst(event.request);
+      if (response) return response;
+      return (await caches.match('/index.html')) || new Response('Duke no está disponible sin conexión.', {
         status: 503,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
-    }
+    })());
+    return;
+  }
+
+  event.respondWith((async () => {
+    const response = await networkFirst(event.request);
+    if (response) return response;
+
+    return new Response('Recurso no disponible', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   })());
 });
 
