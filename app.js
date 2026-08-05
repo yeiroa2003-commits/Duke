@@ -1,7 +1,16 @@
+const DUKE_BUILD = '2026.08.05-r17';
 const gateScreen = document.getElementById('gateScreen');
 const gateTitle = document.getElementById('gateTitle');
 const gateText = document.getElementById('gateText');
 const gateLoader = document.getElementById('gateLoader');
+
+let startPromise = null;
+let optionalFeaturesStarted = false;
+
+function versioned(path) {
+  const join = path.includes('?') ? '&' : '?';
+  return `${path}${join}build=${encodeURIComponent(DUKE_BUILD)}`;
+}
 
 function showGateError(message) {
   let error = document.getElementById('gateCodeError');
@@ -16,6 +25,77 @@ function showGateError(message) {
   error.textContent = message;
 }
 
+function showRecovery(error) {
+  console.error('Duke startup failure:', error);
+  document.getElementById('authScreen')?.classList.add('hidden');
+  document.getElementById('appShell')?.classList.add('hidden');
+  gateScreen?.classList.remove('hidden');
+  gateLoader?.classList.add('hidden');
+  if (gateTitle) gateTitle.textContent = 'Duke necesita reiniciarse';
+  if (gateText) gateText.textContent = 'Se detectó un archivo antiguo o incompleto. Presiona reparar para limpiar la instalación y abrir la versión nueva.';
+
+  if (!document.getElementById('dukeRepairButton')) {
+    const button = document.createElement('button');
+    button.id = 'dukeRepairButton';
+    button.type = 'button';
+    button.className = 'primary-btn full';
+    button.style.marginTop = '18px';
+    button.textContent = 'Reparar y abrir Duke';
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      button.textContent = 'Reparando…';
+      await resetLocalInstallation();
+      location.replace(`${location.pathname}?duke-repair=${Date.now()}${location.hash || ''}`);
+    });
+    document.querySelector('.gate-card')?.append(button);
+  }
+}
+
+async function resetLocalInstallation() {
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+  } catch (error) {
+    console.warn('Duke cache cleanup failed:', error);
+  }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+  } catch (error) {
+    console.warn('Duke worker cleanup failed:', error);
+  }
+}
+
+async function prepareFreshBuild() {
+  const storedBuild = localStorage.getItem('duke_active_build');
+  if (storedBuild === DUKE_BUILD) return;
+
+  localStorage.setItem('duke_active_build', DUKE_BUILD);
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+  } catch (error) {
+    console.warn('Duke old cache cleanup failed:', error);
+  }
+}
+
+async function refreshServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    await registration.update().catch(() => {});
+  } catch (error) {
+    console.warn('Duke service worker unavailable:', error);
+  }
+}
+
 function openJourneySection() {
   setTimeout(() => {
     document.getElementById('dukeJourneySection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -25,13 +105,9 @@ function openJourneySection() {
 
 async function loadOptionalFeature(path, exportName) {
   try {
-    const module = await import(path);
+    const module = await import(versioned(path));
     const initializer = module?.[exportName];
-    if (typeof initializer === 'function') {
-      await initializer();
-    } else {
-      console.warn(`Duke optional feature missing initializer: ${exportName}`);
-    }
+    if (typeof initializer === 'function') await initializer();
     return true;
   } catch (error) {
     console.error(`Duke optional feature failed: ${path}`, error);
@@ -39,7 +115,10 @@ async function loadOptionalFeature(path, exportName) {
   }
 }
 
-async function startOptionalFeatures() {
+function startOptionalFeatures() {
+  if (optionalFeaturesStarted) return;
+  optionalFeaturesStarted = true;
+
   const features = [
     ['/src/space-fix.js', 'initSpaceFix'],
     ['/src/video-calls.js', 'initWebRTCCalls'],
@@ -55,51 +134,46 @@ async function startOptionalFeatures() {
   ];
 
   for (const [path, exportName] of features) {
-    await loadOptionalFeature(path, exportName);
+    void loadOptionalFeature(path, exportName);
   }
-
-  // Audio is intentionally loaded last and isolated because browser media APIs
-  // vary between iPhone, Android and desktop. It must never block Duke startup.
-  setTimeout(() => {
-    loadOptionalFeature('/src/gift-audio-natural.js', 'initGiftAudioNatural');
-  }, 700);
 }
 
-async function startDuke() {
+async function startDukeInternal() {
   const entryHash = location.hash;
   document.getElementById('copyPrivateLinkButton')?.classList.add('hidden');
 
-  try {
-    const { init } = await import('/src/events.js');
-    if (typeof init !== 'function') throw new Error('DUKE_CORE_INIT_MISSING');
+  const module = await import(versioned('/src/events.js'));
+  if (typeof module?.init !== 'function') throw new Error('DUKE_CORE_INIT_MISSING');
 
-    await init();
+  await module.init();
+  startOptionalFeatures();
+  void refreshServiceWorker();
 
-    // Duke is already usable at this point. Extra features load separately so
-    // one broken module cannot leave the whole application blank.
-    startOptionalFeatures();
+  navigator.serviceWorker?.addEventListener('message', (event) => {
+    if (event.data?.type === 'DUKE_OPEN_JOURNEY') openJourneySection();
+  });
 
-    navigator.serviceWorker?.addEventListener('message', (event) => {
-      if (event.data?.type === 'DUKE_OPEN_JOURNEY') openJourneySection();
-    });
-
-    if (entryHash === '#duke-notes') {
-      setTimeout(() => {
-        document.getElementById('dukeNotesSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        history.replaceState({}, '', location.pathname);
-      }, 900);
-    } else if (entryHash === '#duke-journey') {
-      setTimeout(openJourneySection, 700);
-    } else if (location.hash && !location.hash.startsWith('#duke-call=')) {
+  if (entryHash === '#duke-notes') {
+    setTimeout(() => {
+      document.getElementById('dukeNotesSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       history.replaceState({}, '', location.pathname);
-    }
-  } catch (error) {
-    console.error('Duke core init error:', error);
-    gateScreen?.classList.remove('hidden');
-    if (gateTitle) gateTitle.textContent = 'Duke no pudo iniciar';
-    if (gateText) gateText.textContent = 'Actualiza la página. Si el problema continúa, cierra Duke por completo y vuelve a abrirlo.';
-    gateLoader?.classList.add('hidden');
+    }, 900);
+  } else if (entryHash === '#duke-journey') {
+    setTimeout(openJourneySection, 700);
+  } else if (location.hash && !location.hash.startsWith('#duke-call=')) {
+    history.replaceState({}, '', location.pathname);
   }
+}
+
+function startDuke() {
+  if (!startPromise) {
+    startPromise = startDukeInternal().catch((error) => {
+      startPromise = null;
+      showRecovery(error);
+      throw error;
+    });
+  }
+  return startPromise;
 }
 
 function renderCodeGate() {
@@ -130,6 +204,8 @@ function renderCodeGate() {
     const button = event.submitter;
     const input = document.getElementById('gateCodeInput');
     const code = input?.value.trim() || '';
+    if (!button || !input) return;
+
     button.disabled = true;
     showGateError('');
 
@@ -137,17 +213,20 @@ function renderCodeGate() {
       const response = await fetch('/api/access', {
         method: 'POST',
         credentials: 'same-origin',
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) throw new Error(data.error || 'INVALID_ACCESS_CODE');
       await startDuke();
-    } catch {
-      showGateError('El código no coincide. Escríbelo nuevamente.');
-      if (input) {
+    } catch (error) {
+      if (error?.message === 'INVALID_ACCESS_CODE') {
+        showGateError('El código no coincide. Escríbelo nuevamente.');
         input.value = '';
         input.focus();
+      } else {
+        showRecovery(error);
       }
     } finally {
       button.disabled = false;
@@ -156,8 +235,10 @@ function renderCodeGate() {
 }
 
 async function boot() {
+  await prepareFreshBuild();
+
   try {
-    const response = await fetch('/api/duke?action=gate', {
+    const response = await fetch(`/api/duke?action=gate&build=${encodeURIComponent(DUKE_BUILD)}`, {
       credentials: 'same-origin',
       cache: 'no-store',
     });
@@ -166,10 +247,21 @@ async function boot() {
       await startDuke();
       return;
     }
-  } catch {
-    // The code screen remains available when the initial check fails.
+  } catch (error) {
+    console.warn('Duke gate check failed:', error);
   }
+
   renderCodeGate();
 }
 
-boot();
+window.addEventListener('error', (event) => {
+  if (!document.getElementById('appShell')?.classList.contains('hidden')) return;
+  showRecovery(event.error || new Error(event.message || 'DUKE_WINDOW_ERROR'));
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  if (!document.getElementById('appShell')?.classList.contains('hidden')) return;
+  showRecovery(event.reason || new Error('DUKE_PROMISE_ERROR'));
+});
+
+void boot();
