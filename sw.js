@@ -1,4 +1,4 @@
-const CACHE = 'duke-neon-v13';
+const CACHE = 'duke-neon-v14';
 const STATIC = [
   '/',
   '/index.html',
