@@ -6,7 +6,7 @@ function beagleSvgMarkup() {
   return `
     <svg viewBox="0 0 250 250" role="img" aria-labelledby="${uid}Title ${uid}Desc">
       <title id="${uid}Title">Duke, el beagle narrador</title>
-      <desc id="${uid}Desc">Perrito beagle tricolor animado, con orejas largas, franja blanca, lomo negro y collar azul.</desc>
+      <desc id="${uid}Desc">Perrito beagle tricolor animado y delgado, con orejas largas, franja blanca corta, lomo negro, parte inferior manchada y collar azul.</desc>
       <defs>
         <linearGradient id="${uid}Tan" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stop-color="#d99a55"/>
@@ -44,39 +44,68 @@ function beagleSvgMarkup() {
 
       <g filter="url(#${uid}Shadow)" stroke="#3a2117" stroke-width="2.2" stroke-linejoin="round">
         <g class="dog-tail">
-          <path d="M188 158c28-21 43-8 34 9-7 13-22 18-35 13" fill="none" stroke="#171719" stroke-width="18" stroke-linecap="round"/>
-          <path d="M215 153c10-2 13 5 7 14-4 6-10 9-17 10" fill="none" stroke="#f4efe4" stroke-width="15" stroke-linecap="round"/>
+          <path d="M184 158c27-20 41-8 33 8-7 13-21 17-34 13" fill="none" stroke="#171719" stroke-width="16" stroke-linecap="round"/>
+          <path d="M210 154c9-2 12 5 6 13-4 6-9 8-16 9" fill="none" stroke="#f4efe4" stroke-width="13" stroke-linecap="round"/>
         </g>
 
         <g class="dog-body">
-          <ellipse cx="126" cy="170" rx="72" ry="58" fill="url(#${uid}White)"/>
-          <path d="M71 143c18-34 84-43 119-7 8 9 11 19 12 31-23-11-49-12-70-4-21 8-45 3-61-20z" fill="url(#${uid}Black)"/>
-          <path class="dog-chest" d="M104 142c9 11 34 11 45 0 10 21 9 55-3 76-12 8-30 8-42 0-12-21-12-55 0-76z" fill="url(#${uid}White)" stroke="none"/>
-          <path d="M81 163c13 10 24 13 44 13 19 0 32-4 47-14" fill="none" stroke="url(#${uid}Blue)" stroke-width="12" stroke-linecap="round"/>
-          <path d="M84 168c13 10 24 13 41 13 20 0 34-4 49-15" fill="none" stroke="#5da2ff" stroke-width="2.3" stroke-linecap="round" opacity=".8"/>
-          <circle cx="128" cy="180" r="10" fill="#e7c34b" stroke="#745414"/>
-          <path d="M123 177h10M128 172v10" stroke="#745414" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="126" cy="172" rx="64" ry="50" fill="url(#${uid}White)"/>
+          <path d="M77 147c17-29 76-37 108-8 8 7 12 17 12 27-22-8-42-8-60-2-20 7-42 3-60-17z" fill="url(#${uid}Black)"/>
+          <path class="dog-chest" d="M108 144c8 8 28 8 36 0 8 18 8 48-2 66-10 7-24 7-34 0-10-18-10-48 0-66z" fill="url(#${uid}White)" stroke="none"/>
+
+          <g class="dog-belly-spots" fill="#a7653d" stroke="none" opacity=".92">
+            <ellipse cx="113" cy="171" rx="3.8" ry="3.1" transform="rotate(-18 113 171)"/>
+            <ellipse cx="137" cy="166" rx="3.1" ry="4.2" transform="rotate(26 137 166)"/>
+            <ellipse cx="120" cy="187" rx="2.5" ry="3.4" transform="rotate(14 120 187)"/>
+            <ellipse cx="139" cy="195" rx="3.9" ry="2.5" transform="rotate(-22 139 195)"/>
+            <ellipse cx="109" cy="202" rx="2.6" ry="2.1"/>
+            <ellipse cx="129" cy="209" rx="3.2" ry="2.6" transform="rotate(18 129 209)"/>
+          </g>
+          <g class="dog-belly-spots-dark" fill="#7f462d" stroke="none" opacity=".82">
+            <circle cx="128" cy="178" r="2.2"/>
+            <ellipse cx="116" cy="194" rx="2" ry="2.8"/>
+            <circle cx="145" cy="182" r="2"/>
+          </g>
+
+          <path d="M88 168c12 8 22 11 39 11 18 0 30-3 45-12" fill="none" stroke="url(#${uid}Blue)" stroke-width="11" stroke-linecap="round"/>
+          <path d="M90 171c11 8 21 10 37 10 18 0 31-3 45-12" fill="none" stroke="#5da2ff" stroke-width="2.1" stroke-linecap="round" opacity=".8"/>
+          <circle cx="128" cy="179" r="9.5" fill="#e7c34b" stroke="#745414"/>
+          <path d="M123 176h10M128 171v10" stroke="#745414" stroke-width="2" stroke-linecap="round"/>
         </g>
 
         <g class="dog-paw-left">
-          <path d="M61 176c-5 14-6 30 1 43 6 9 31 10 40 0 6-12 4-27-3-40z" fill="url(#${uid}White)"/>
-          <ellipse cx="80" cy="219" rx="24" ry="15" fill="url(#${uid}White)"/>
-          <circle cx="72" cy="190" r="3.3" fill="#a8663d" stroke="none"/><circle cx="88" cy="199" r="2.7" fill="#9b5935" stroke="none"/><circle cx="77" cy="208" r="2.3" fill="#b1754d" stroke="none"/>
-          <path d="M68 222v-7M79 224v-8M90 222v-7" stroke="#b8aa96" stroke-width="2" stroke-linecap="round"/>
+          <path d="M67 178c-4 12-5 26 1 38 5 8 24 9 31 0 5-11 4-24-2-36z" fill="url(#${uid}White)"/>
+          <ellipse cx="82" cy="217" rx="19" ry="12" fill="url(#${uid}White)"/>
+          <g fill="#a8663d" stroke="none">
+            <ellipse cx="74" cy="188" rx="3.3" ry="2.5" transform="rotate(-20 74 188)"/>
+            <ellipse cx="88" cy="194" rx="2.8" ry="3.6" transform="rotate(17 88 194)"/>
+            <ellipse cx="77" cy="202" rx="2.5" ry="2"/>
+            <ellipse cx="91" cy="209" rx="2.2" ry="2.8"/>
+            <circle cx="72" cy="211" r="1.9"/>
+          </g>
+          <g fill="#7c432b" stroke="none" opacity=".8"><circle cx="83" cy="185" r="1.8"/><circle cx="83" cy="207" r="1.7"/></g>
+          <path d="M72 220v-6M81 222v-7M90 220v-6" stroke="#b8aa96" stroke-width="2" stroke-linecap="round"/>
         </g>
         <g class="dog-paw-right">
-          <path d="M151 179c-7 13-8 28-3 40 8 10 33 9 40-1 7-13 5-29-1-43z" fill="url(#${uid}White)"/>
-          <ellipse cx="169" cy="219" rx="24" ry="15" fill="url(#${uid}White)"/>
-          <circle cx="164" cy="190" r="3" fill="#a8663d" stroke="none"/><circle cx="177" cy="201" r="2.5" fill="#9b5935" stroke="none"/><circle cx="158" cy="208" r="2.2" fill="#b1754d" stroke="none"/>
-          <path d="M157 222v-7M168 224v-8M179 222v-7" stroke="#b8aa96" stroke-width="2" stroke-linecap="round"/>
+          <path d="M154 180c-5 12-6 26-2 36 6 9 25 8 32 0 5-11 4-25 0-37z" fill="url(#${uid}White)"/>
+          <ellipse cx="168" cy="217" rx="19" ry="12" fill="url(#${uid}White)"/>
+          <g fill="#a8663d" stroke="none">
+            <ellipse cx="162" cy="188" rx="2.8" ry="3.4" transform="rotate(12 162 188)"/>
+            <ellipse cx="175" cy="195" rx="3.4" ry="2.6" transform="rotate(-18 175 195)"/>
+            <ellipse cx="160" cy="202" rx="2.3" ry="2.8"/>
+            <ellipse cx="176" cy="208" rx="2.5" ry="2"/>
+            <circle cx="167" cy="211" r="1.9"/>
+          </g>
+          <g fill="#7c432b" stroke="none" opacity=".8"><circle cx="171" cy="185" r="1.7"/><circle cx="168" cy="202" r="1.6"/></g>
+          <path d="M159 220v-6M168 222v-7M177 220v-6" stroke="#b8aa96" stroke-width="2" stroke-linecap="round"/>
         </g>
 
         <g class="dog-head">
           <path class="dog-ear-left" d="M82 70C48 59 37 79 44 111c5 25 17 39 34 42 11 2 17-5 14-18z" fill="url(#${uid}Ear)"/>
           <path class="dog-ear-right" d="M166 69c35-11 47 10 39 42-6 25-18 39-35 42-11 1-17-7-13-19z" fill="url(#${uid}Ear)"/>
-          <path d="M59 111c-1-41 27-70 64-70 39 0 68 29 66 71-2 38-27 63-65 63-38 0-64-25-65-64z" fill="url(#${uid}Tan)"/>
+          <path d="M63 111c-1-39 25-67 60-67 36 0 63 28 61 68-2 35-25 58-61 58-36 0-59-23-60-59z" fill="url(#${uid}Tan)"/>
 
-          <path class="dog-blaze" d="M111 43c8-5 17-5 25 0-6 18-6 34-2 49 4 14 4 25-2 39-5 10-11 16-17 16-7 0-13-6-18-17-5-13-4-25 1-38 6-16 9-31 13-49z" fill="url(#${uid}White)" stroke="none"/>
+          <path class="dog-blaze" d="M116 52c5-3 11-3 16 0-4 12-4 23-1 34 2 9 2 17-2 26-3 7-7 11-13 11s-10-4-13-11c-4-9-4-17-1-26 3-11 5-22 14-34z" fill="url(#${uid}White)" stroke="none"/>
           <path d="M68 100c6-24 23-37 42-37-12 12-17 28-14 47-12-7-20-10-28-10z" fill="#2d211c" opacity=".26" stroke="none"/>
           <path d="M180 99c-7-24-24-37-43-37 13 12 18 28 15 47 11-7 20-10 28-10z" fill="#2d211c" opacity=".27" stroke="none"/>
 
@@ -111,6 +140,7 @@ function injectBeagleStyles() {
   style.textContent = `
     .duke-dog.beagle-duke .dog-body{transform-origin:126px 190px;animation:beagleBreathe 3.1s ease-in-out infinite}
     .duke-dog.beagle-duke .dog-chest{animation:beagleChest 3.1s ease-in-out infinite;transform-origin:center bottom;transform-box:fill-box}
+    .duke-dog.beagle-duke .dog-belly-spots,.duke-dog.beagle-duke .dog-belly-spots-dark{transform-origin:126px 195px;animation:beagleChest 3.1s ease-in-out infinite}
     .duke-dog.beagle-duke .dog-nose{transform-box:fill-box;transform-origin:center;animation:beagleSniff 2.9s ease-in-out infinite}
     .duke-dog.beagle-duke .dog-brow-left,.duke-dog.beagle-duke .dog-brow-right{transform-box:fill-box;transform-origin:center;animation:beagleBrows 4.2s ease-in-out infinite}
     .duke-dog.beagle-duke .dog-tongue{transform-box:fill-box;transform-origin:center top;transition:opacity .2s ease}
