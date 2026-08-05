@@ -40,6 +40,7 @@ async function startDuke() {
       { initJourney },
       { initGiftStory },
       { initDukeBeagle },
+      { initGiftAudioNatural },
     ] = await Promise.all([
       import('/src/events.js'),
       import('/src/space-fix.js'),
@@ -53,6 +54,7 @@ async function startDuke() {
       import('/src/journey.js'),
       import('/src/gift-story.js'),
       import('/src/duke-beagle.js'),
+      import('/src/gift-audio-natural.js'),
     ]);
     await init();
     initSpaceFix();
@@ -66,6 +68,7 @@ async function startDuke() {
     initJourney();
     initGiftStory();
     initDukeBeagle();
+    initGiftAudioNatural();
 
     navigator.serviceWorker?.addEventListener('message', (event) => {
       if (event.data?.type === 'DUKE_OPEN_JOURNEY') openJourneySection();
