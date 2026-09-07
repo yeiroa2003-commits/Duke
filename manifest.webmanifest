@@ -1,6 +1,6 @@
 {
-  "name": "EMEL WASH · Administración",
-  "short_name": "EMEL WASH",
+  "name": "MEMEL WASH · Administración",
+  "short_name": "MEMEL WASH",
   "description": "Control de lavados, clientes, empleados, pagos y comisiones.",
   "start_url": "/",
   "display": "standalone",
@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/assets/emel-wash-icon.svg",
+      "src": "/assets/memel-wash-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
