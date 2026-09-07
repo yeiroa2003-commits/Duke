@@ -2,7 +2,11 @@
   "name": "memel-wash",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Sistema administrativo para lavadero de motos MEMEL WASH",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "npx serve ."
   },
