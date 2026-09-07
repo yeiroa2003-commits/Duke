@@ -1,11 +1,12 @@
-const CACHE_NAME = 'emel-wash-2026-09-07-v1';
+const CACHE_NAME = 'memel-wash-2026-09-07-v3';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/styles.css',
   '/app.js',
+  '/legacy-app.js',
   '/manifest.webmanifest',
-  '/assets/emel-wash-icon.svg'
+  '/assets/memel-wash-icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -25,6 +26,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
 
   event.respondWith(
     fetch(event.request)

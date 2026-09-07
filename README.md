@@ -1,4 +1,4 @@
-# EMEL WASH
+# MEMEL WASH
 
 Sistema web administrativo para un lavadero de motos.
 
@@ -13,26 +13,25 @@ Sistema web administrativo para un lavadero de motos.
 - Filtros de historial por búsqueda, estado de pago y fecha.
 - Ajustes de nombre del negocio, moneda y comisión por defecto.
 - Exportación e importación de respaldos JSON.
-- PWA instalable y diseño responsive para teléfono, tablet y computadora.
+- PWA instalable y diseño responsive.
 
-## Persistencia
+## Base de datos
 
-Esta primera versión es local-first: guarda la información en `localStorage` del navegador. Esto permite usarla inmediatamente sin configurar servidor ni base de datos.
+MEMEL WASH reutiliza la conexión Neon que ya estaba configurada en el proyecto mediante `DATABASE_URL`.
 
-Para sincronizar varios dispositivos o tener cuentas de usuario, la siguiente etapa es conectar una base de datos y autenticación.
+La API `api/memel.js` crea automáticamente la tabla `public.memel_wash_state` y guarda allí la información administrativa compartida. El navegador conserva una copia local de respaldo para continuar operando si la conexión se interrumpe temporalmente.
 
-## Desarrollo local
-
-```bash
-npm install
-npm start
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
 ```
 
-También puede abrirse con cualquier servidor estático.
+La cadena real debe permanecer como variable privada en Vercel y no debe publicarse en GitHub.
 
-## Estructura
+## Archivos principales
 
+- `app.js`: arranque, conexión y sincronización con Neon.
+- `legacy-app.js`: lógica administrativa de clientes, empleados, lavados, pagos y comisiones.
+- `api/memel.js`: API serverless conectada a Neon.
 - `index.html`: interfaz principal.
 - `styles.css`: estilos responsive.
-- `app.js`: lógica de clientes, empleados, lavados, pagos y comisiones.
 - `manifest.webmanifest` y `sw.js`: instalación como aplicación web.

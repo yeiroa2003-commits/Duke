@@ -1,9 +1,16 @@
 {
-  "name": "emel-wash",
+  "name": "memel-wash",
   "version": "1.0.0",
   "private": true,
-  "description": "Sistema administrativo para lavadero de motos EMEL WASH",
+  "type": "module",
+  "description": "Sistema administrativo para lavadero de motos MEMEL WASH",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "npx serve ."
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.1"
   }
 }
