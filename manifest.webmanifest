@@ -1,15 +1,15 @@
 {
-  "name": "Duke · Nuestro lugar",
-  "short_name": "Duke",
-  "description": "Un espacio privado para dos con chat, llamadas, juegos y recuerdos.",
+  "name": "EMEL WASH · Administración",
+  "short_name": "EMEL WASH",
+  "description": "Control de lavados, clientes, empleados, pagos y comisiones.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#05040a",
-  "theme_color": "#0b0714",
+  "background_color": "#07111f",
+  "theme_color": "#0b1220",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/assets/duke-icon.svg",
+      "src": "/assets/emel-wash-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
