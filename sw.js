@@ -1,10 +1,10 @@
-const CACHE_NAME = 'memel-wash-2026-09-07-v2';
+const CACHE_NAME = 'memel-wash-2026-09-07-v3';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/styles.css',
   '/app.js',
-  '/memel-bootstrap.js',
+  '/legacy-app.js',
   '/manifest.webmanifest',
   '/assets/memel-wash-icon.svg'
 ];
